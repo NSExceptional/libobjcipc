@@ -77,7 +77,7 @@ static OBJCIPC *sharedInstance = nil;
 
 + (void)load {
 	
-	if( [self isassertiond]) {
+	if( [self isAssertiond]) {
 		// replace the function. testing if is iOS 8 by checking if it responds to iOS 8-only method
 		if([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
 			MSHookFunction(((int *)MSFindSymbol(NULL, "_BSAuditTokenTaskHasEntitlement")), (int*)replaced_BSAuditTokenTaskHasEntitlement, (void**)&original_BSAuditTokenTaskHasEntitlement);
@@ -108,7 +108,7 @@ static OBJCIPC *sharedInstance = nil;
 	}
 }
 
-+ (BOOL)isassertiond {
++ (BOOL)isAssertiond {
 	
 	static BOOL queried = NO;
 	static BOOL result = NO;
@@ -273,7 +273,7 @@ static OBJCIPC *sharedInstance = nil;
 	
 	SBApplicationController *controller = [objc_getClass("SBApplicationController") sharedInstance];
 	SBApplication *application = nil;
-	if([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
+	if([controller respondsToSelector:@selector(applicationWithBundleIdentifier:)]) {
 		application = [controller applicationWithBundleIdentifier:identifier];
 	} else {
 		application = [controller applicationWithDisplayIdentifier:identifier];
