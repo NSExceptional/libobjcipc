@@ -39,6 +39,7 @@ typedef enum
 
 + (instancetype)sharedInstance;
 - (SBApplication *)applicationWithDisplayIdentifier:(NSString *)identifier;
+- (SBApplication *)applicationWithBundleIdentifier:(NSString *)identifier;
 
 @end
 

@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import <sys/socket.h>
 #import <netinet/in.h>
 #import <arpa/inet.h>
@@ -47,13 +48,41 @@ static inline void socketServerCallback(CFSocketRef s, CFSocketCallBackType type
 	}
 }
 
+@interface BSAuditToken : NSObject
+
+- (int)pid;
+
+@end
+
+// I don't think the first arugment even is a BSAuditToken, leaving it as a
+//TODO: find actual function parameters to check if SpringBoard is requesting or some other proc
+static BOOL (*original_BSAuditTokenTaskHasEntitlement)(BSAuditToken *token, NSString *entitlement);
+static inline BOOL replaced_BSAuditTokenTaskHasEntitlement(BSAuditToken *token, NSString *entitlement)
+{
+	
+	if ([entitlement isEqualToString:@"com.apple.multitasking.unlimitedassertions"]) {
+		
+		// override the original result
+		// as mentioned, trying to access the first parameter crashes the device, and since it's happening on assertiond, it'll look like a bootloop. we could've used [token pid] == pidForProcess... or [token bundleIdentifier]
+		
+		return YES;
+	}
+	
+	return original_BSAuditTokenTaskHasEntitlement(token, entitlement);
+}
+
 static OBJCIPC *sharedInstance = nil;
 
 @implementation OBJCIPC
 
 + (void)load {
 	
-	if ([self isBackBoard]) {
+	if( [self isassertiond]) {
+		// replace the function. testing if is iOS 8 by checking if it responds to iOS 8-only method
+		if([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
+			MSHookFunction(((int *)MSFindSymbol(NULL, "_BSAuditTokenTaskHasEntitlement")), (int*)replaced_BSAuditTokenTaskHasEntitlement, (void**)&original_BSAuditTokenTaskHasEntitlement);
+		}
+	} else if ([self isBackBoard]) {
 		
 		// load the library
 		dlopen(XPCObjects, RTLD_LAZY);
@@ -77,6 +106,19 @@ static OBJCIPC *sharedInstance = nil;
 	} else {
 		// Daemon or other process with no bundle identifier.
 	}
+}
+
++ (BOOL)isassertiond {
+	
+	static BOOL queried = NO;
+	static BOOL result = NO;
+	
+	if(!queried) {
+		queried = YES;
+		result = [[NSProcessInfo processInfo].processName isEqualToString:@"assertiond"];
+	}
+	
+	return result;
 }
 
 + (BOOL)isSpringBoard {
@@ -230,7 +272,12 @@ static OBJCIPC *sharedInstance = nil;
 	SpringBoard *app = (SpringBoard *)[UIApplication sharedApplication];
 	
 	SBApplicationController *controller = [objc_getClass("SBApplicationController") sharedInstance];
-	SBApplication *application = [controller applicationWithDisplayIdentifier:identifier];
+	SBApplication *application = nil;
+	if([[NSProcessInfo processInfo] respondsToSelector:@selector(operatingSystemVersion)]) {
+		application = [controller applicationWithBundleIdentifier:identifier];
+	} else {
+		application = [controller applicationWithDisplayIdentifier:identifier];
+	}
 	
 	if (application == nil) {
 		IPCLOG(@"App with identifier <%@> cannot be found", identifier);

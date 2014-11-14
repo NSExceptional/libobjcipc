@@ -5,7 +5,7 @@ cydia=($CYDIA)
 
 if [[ $1 == install || $1 == upgrade || $1 == reinstall || $1 == remove ]]; then
 	if [[ ${CYDIA+@} ]]; then
-		eval "echo 'finish:restart' >&${cydia[0]}"
+		eval "echo 'finish:reboot' >&${cydia[0]}"
 	fi
 fi
 
