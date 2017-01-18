@@ -20,10 +20,10 @@
 #import "Message.h"
 
 // to enable process assertions in SpringBoard
-static BOOL (*orignal_XPCConnectionHasEntitlement)(xpc_connection_t connection, NSString *entitlement);
-static inline BOOL replaced_XPCConnectionHasEntitlement(xpc_connection_t connection, NSString *entitlement) {
+static BOOL (*orignal_BSAuditTokenTaskHasEntitlement)(xpc_connection_t connection, NSString *entitlement);
+static inline BOOL replaced_BSAuditTokenTaskHasEntitlement(xpc_connection_t connection, NSString *entitlement) {
 	
-	IPCLOG(@"_XPCConnectionHasEntitlement <entitlement: %@>", entitlement);
+	IPCLOG(@"_BSAuditTokenTaskHasEntitlement <entitlement: %@>", entitlement);
 	
 	if ([entitlement isEqualToString:@"com.apple.multitasking.unlimitedassertions"]) {
 		
@@ -32,7 +32,7 @@ static inline BOOL replaced_XPCConnectionHasEntitlement(xpc_connection_t connect
 			return YES;
 	}
 	
-	return orignal_XPCConnectionHasEntitlement(connection, entitlement);
+	return orignal_BSAuditTokenTaskHasEntitlement(connection, entitlement);
 }
 
 static inline void socketServerCallback(CFSocketRef s, CFSocketCallBackType type, CFDataRef address, const void *data, void *info) {
@@ -58,7 +58,7 @@ static OBJCIPC *sharedInstance = nil;
 		// load the library
 		dlopen(XPCObjects, RTLD_LAZY);
 		// replace the function
-		MSHookFunction(((int *)MSFindSymbol(NULL, "_XPCConnectionHasEntitlement")), (int *)replaced_XPCConnectionHasEntitlement, (void **)&orignal_XPCConnectionHasEntitlement);
+		MSHookFunction(((int *)MSFindSymbol(NULL, "_BSAuditTokenTaskHasEntitlement")), (int *)replaced_BSAuditTokenTaskHasEntitlement, (void **)&orignal_BSAuditTokenTaskHasEntitlement);
 		
 	} else if ([self isSpringBoard]) {
 		
