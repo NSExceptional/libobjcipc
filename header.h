@@ -1,5 +1,6 @@
 #define LOG_MESSAGE_BODY 0
 
+#undef DEBUG
 #ifdef DEBUG
 	#define IPCLOG(x,...) NSLog(@"*** libobjcipc: %@",[NSString stringWithFormat:(x), ##__VA_ARGS__])
 #else
